@@ -5,10 +5,22 @@ const OpenAI = require("openai");
 const app = express();
 
 // Enable CORS for your front-end
-const corsOptions = {
-    origin: "http://localhost:3000",
-};
+const allowedOrigins = [
+    "https://localhost:3000",
+    "https://localhost:3001",
+    "https://main--fascinating-cactus-e3b278.netlify.app",
+    "https://fascinating-cactus-e3b278.netlify.app",
+];
 
+const corsOptions = {
+    origin: function(origin, callback) {
+        if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+};
 app.use(cors(corsOptions));
 app.use(express.json());
 
