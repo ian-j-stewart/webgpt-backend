@@ -3,7 +3,11 @@ import express from 'express';
 import cors from 'cors';
 
 const app = express();
+import dotenv from 'dotenv';
+dotenv.config();
 
+const key = process.env.OPENAI_API_KEY
+console.log(`API Key from .env: ${process.env.OPENAI_API_KEY}`);
 const allowedOrigins = [
     "http://localhost:3000",
     "http://localhost:3001",
@@ -30,7 +34,7 @@ const assistantId = process.env.OPENAI_ASSISTANT_ID// Replace with your actual a
 const config = {
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': "Bearer sk-proj-3GOEB0EMJ8dKkPWRl3eOT3BlbkFJNyqxE6tr4ds7hIlxLb9Z",
+        'Authorization': `Bearer ${key}`,
         'OpenAI-Beta': 'assistants=v2'
     }
 };
@@ -48,10 +52,10 @@ app.post('/createThread', async (req, res) => {
         };
         //console.log("data", data)
         // Call the OpenAI API to create a thread with the initial message
-        const response = await axios.post('https://api.openai.com/v1/threads', data, {
+        const response = await axios.post('https://api.openai.com/v1/threads', {}, {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': "Bearer sk-proj-3GOEB0EMJ8dKkPWRl3eOT3BlbkFJNyqxE6tr4ds7hIlxLb9Z",
+                'Authorization': `Bearer ${key}`,
                 'OpenAI-Beta': 'assistants=v2'
             }
         });
@@ -88,7 +92,7 @@ app.post('/chat', async (req, res) => {
     const config = {
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': "Bearer Bearer sk-proj-3GOEB0EMJ8dKkPWRl3eOT3BlbkFJNyqxE6tr4ds7hIlxLb9Z",
+            'Authorization': `Bearer ${key}`,
             'OpenAI-Beta': 'assistants=v2'
         }
     };
@@ -103,7 +107,7 @@ app.post('/chat', async (req, res) => {
         const response =  axios.post(`https://api.openai.com/v1/threads/${threadId}/messages`, data, {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': "Bearer sk-proj-3GOEB0EMJ8dKkPWRl3eOT3BlbkFJNyqxE6tr4ds7hIlxLb9Z",
+                'Authorization': `Bearer ${key}`,
                 'OpenAI-Beta': 'assistants=v2'
             }}
         );
@@ -131,7 +135,7 @@ app.post('/run', async (req, res) => {
         const runResponse = await  axios.post(`https://api.openai.com/v1/threads/${threadId}/runs`, { "assistant_id": "asst_IdLjHl0AGDauW5C3ysOz8UEH" }, {
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer sk-proj-3GOEB0EMJ8dKkPWRl3eOT3BlbkFJNyqxE6tr4ds7hIlxLb9Z`, // Using environment variable
+                'Authorization': `Bearer ${key}`, // Using environment variable
                 'OpenAI-Beta': 'assistants=v2'
             }});
         console.log("Thread run response:", runResponse);
