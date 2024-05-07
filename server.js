@@ -33,7 +33,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-const openaiUrl = 'https://api.openai.com/v2/assistants/asst_IdLjHl0AGDauW5C3ysOz8UEH/completions'; // Update with the correct v2 Assistant endpoint
+const openaiUrl = `https://api.openai.com/v2/assistants/${process.env.OPENAI_ASSISTANT_ID}/completions`; // Update with the correct v2 Assistant endpoint
 const apiKey = process.env.OPENAI_API_KEY;
 const assistantId = process.env.OPENAI_ASSISTANT_ID// Replace with your actual assistant ID
 const config = {
@@ -137,7 +137,7 @@ app.post('/run', async (req, res) => {
         // Optional: Post a message to the thread if needed
 
         // Run the thread
-        const runResponse = await  axios.post(`https://api.openai.com/v1/threads/${threadId}/runs`, { "assistant_id": "asst_IdLjHl0AGDauW5C3ysOz8UEH" }, {
+        const runResponse = await  axios.post(`https://api.openai.com/v1/threads/${threadId}/runs`, { "assistant_id": process.env.OPENAI_ASSISTANT_ID }, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${key}`, // Using environment variable
