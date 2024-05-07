@@ -13,6 +13,7 @@ const allowedOrigins = [
     "http://localhost:3001",
     "https://main--fascinating-cactus-e3b278.netlify.app",
     "https://fascinating-cactus-e3b278.netlify.app",
+    "https://webgpt-frontend-git-exc-ian-stewarts-projects.vercel.app",
 ];
 
 const corsOptions = {
