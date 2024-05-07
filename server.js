@@ -15,6 +15,7 @@ const allowedOrigins = [
     "https://fascinating-cactus-e3b278.netlify.app",
     "https://webgpt-frontend-git-exc-ian-stewarts-projects.vercel.app",
     "https://webgpt-frontend-ker5-git-exc-ian-stewarts-projects.vercel.app",
+
 ];
 
 const corsOptions = {
