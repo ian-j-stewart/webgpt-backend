@@ -14,6 +14,8 @@ const allowedOrigins = [
     "https://main--fascinating-cactus-e3b278.netlify.app",
     "https://fascinating-cactus-e3b278.netlify.app",
     "https://webgpt-frontend-git-exc-ian-stewarts-projects.vercel.app",
+    "https://excgpt.vercel.app",
+    "https://webgpt.vercel.app",
     "https://webgpt-frontend-ker5-git-exc-ian-stewarts-projects.vercel.app",
 
 ];
