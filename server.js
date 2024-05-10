@@ -91,13 +91,13 @@ app.post('/chat', async (req, res) => {
     }
 
     const { message, threadId } = req.body;
-    console.log("Received thread ID:", threadId);
+    //console.log("Received thread ID:", threadId);
 
     const data = {
         role: 'user',
         content: message
     };
-    console.log("data passed", data)
+    //console.log("data passed", data)
     const config = {
         headers: {
             'Content-Type': 'application/json',
@@ -106,7 +106,7 @@ app.post('/chat', async (req, res) => {
         }
     };
 
-    console.log("Preparing to send message response to OpenAI");
+    //console.log("Preparing to send message response to OpenAI");
 
     try {
 
@@ -124,9 +124,9 @@ app.post('/chat', async (req, res) => {
 
 
         res.json(response.data.id); // Only send the response data received from OpenAI
-        console.log(response.data.id)
+        //console.log(response.data.id)
     } catch (error) {
-        console.error('Error submitting message to OpenAI:', error);
+        //console.error('Error submitting message to OpenAI:', error);
         // Determine the status code to return
         const statusCode = error.response ? error.response.status : 500;
         const errorMessage = error.response ? (error.response.data || error.response.statusText) : error.message;
@@ -137,7 +137,7 @@ app.post('/chat', async (req, res) => {
 
 app.get('/stream', (req, res) => {
     const threadId = req.query.threadId;
-    console.log(`Starting new stream for threadId: ${threadId}`);
+    //console.log(`Starting new stream for threadId: ${threadId}`);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -148,28 +148,28 @@ app.get('/stream', (req, res) => {
         .then(async (generatedStream) => {
             stream = generatedStream;
             for await (const event of stream) {
-                console.log(`Streaming event: ${event.event}`);
+                //console.log(`Streaming event: ${event.event}`);
                 if (event.event === 'thread.message.delta' && event.data && event.data.delta && event.data.delta.content) {
                     const textContent = event.data.delta.content.map(item => item.text && item.text.value ? item.text.value : "").join(' ');
                     res.write(`data: ${JSON.stringify({ message: textContent })}\n\n`);
                 } else if (event.event === 'thread.run.completed') {
-                    console.log("Thread run completed, ending stream.");
+                    //console.log("Thread run completed, ending stream.");
                     res.write(`data: ${JSON.stringify({ message: "Stream completed" })}\n\n`);
                     break;
                 }
             }
         })
         .catch((error) => {
-            console.error(`Error in stream for threadId ${threadId}: ${error.message}`);
+            //console.error(`Error in stream for threadId ${threadId}: ${error.message}`);
             res.write(`data: ${JSON.stringify({ error: "Failed to stream events", details: error.message })}\n\n`);
         })
         .finally(() => {
-            console.log("Closing stream.");
+            //console.log("Closing stream.");
             res.end();
         });
 
     req.on('close', () => {
-        console.log("Client disconnected, cancelling stream if active.");
+        //console.log("Client disconnected, cancelling stream if active.");
         if (stream && stream.cancel) {
             stream.cancel();
         }
@@ -211,7 +211,7 @@ app.get('/last', async (req, res) => {
             messsages: messages
         });
     } catch (error) {
-        console.error('Error retrieving the last message:', error);
+        //console.error('Error retrieving the last message:', error);
         res.status(500).json({
             error: "Internal Server Error",
             details: error.message
