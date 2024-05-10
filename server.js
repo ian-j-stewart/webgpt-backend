@@ -59,7 +59,7 @@ app.post('/createThread', async (req, res) => {
         const data = {
             messages: [initialMessage]
         };
-        //console.log("data", data)
+        console.log("data", data)
         // Call the OpenAI API to create a thread with the initial message
         const response = await axios.post('https://api.openai.com/v1/threads', {}, {
             headers: {
@@ -91,7 +91,7 @@ app.post('/chat', async (req, res) => {
     }
 
     const { message, threadId } = req.body;
-    //console.log("Received thread ID:", threadId);
+    console.log("Received thread ID:", threadId);
 
     const data = {
         role: 'user',
@@ -148,28 +148,28 @@ app.get('/stream', (req, res) => {
         .then(async (generatedStream) => {
             stream = generatedStream;
             for await (const event of stream) {
-                //console.log(`Streaming event: ${event.event}`);
+                console.log(`Streaming event: ${event.event}`);
                 if (event.event === 'thread.message.delta' && event.data && event.data.delta && event.data.delta.content) {
                     const textContent = event.data.delta.content.map(item => item.text && item.text.value ? item.text.value : "").join(' ');
                     res.write(`data: ${JSON.stringify({ message: textContent })}\n\n`);
                 } else if (event.event === 'thread.run.completed') {
-                    //console.log("Thread run completed, ending stream.");
+                    console.log("Thread run completed, ending stream.");
                     res.write(`data: ${JSON.stringify({ message: "Stream completed" })}\n\n`);
                     break;
                 }
             }
         })
         .catch((error) => {
-            //console.error(`Error in stream for threadId ${threadId}: ${error.message}`);
+            console.error(`Error in stream for threadId ${threadId}: ${error.message}`);
             res.write(`data: ${JSON.stringify({ error: "Failed to stream events", details: error.message })}\n\n`);
         })
         .finally(() => {
-            //console.log("Closing stream.");
+            console.log("Closing stream.");
             res.end();
         });
 
     req.on('close', () => {
-        //console.log("Client disconnected, cancelling stream if active.");
+        console.log("Client disconnected, cancelling stream if active.");
         if (stream && stream.cancel) {
             stream.cancel();
         }
