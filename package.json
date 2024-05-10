@@ -12,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/ian-j-stewart/webgpt-backend"
   },
-  "author": "",
+  "author": "Ian Stewart",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/cyclic-software/starter-express-api/issues"
