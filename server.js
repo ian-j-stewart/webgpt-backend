@@ -110,7 +110,7 @@ app.post('/chat', async (req, res) => {
 
     try {
 
-
+        console.log("in try")
 
         // Send a POST request to OpenAI to add the message to the thread
         const response =  await axios.post(`https://api.openai.com/v1/threads/${threadId}/messages`, data, {
@@ -122,7 +122,9 @@ app.post('/chat', async (req, res) => {
         );
 
 
+
         res.json(response.data.id); // Only send the response data received from OpenAI
+        console.log(response.data.id)
     } catch (error) {
         console.error('Error submitting message to OpenAI:', error);
         // Determine the status code to return
@@ -135,49 +137,49 @@ app.post('/chat', async (req, res) => {
 
 app.get('/stream', (req, res) => {
     const threadId = req.query.threadId;
-    const assistantId = process.env.OPENAI_ASSISTANT_ID;
+    console.log(`Starting new stream for threadId: ${threadId}`);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    // Function to send data to the client
-    const sendEventStreamData = (data) => {
-        res.write(`data: ${JSON.stringify(data)}\n\n`);
-    };
-
-    const stream = openai.beta.threads.runs.create(threadId, { assistant_id: assistantId, stream: true })
-        .then(async (stream) => {
+    let stream;
+    openai.beta.threads.runs.create(threadId, { assistant_id: process.env.OPENAI_ASSISTANT_ID, stream: true })
+        .then(async (generatedStream) => {
+            stream = generatedStream;
             for await (const event of stream) {
-                console.log("Received event:", event);
-
+                console.log(`Streaming event: ${event.event}`);
                 if (event.event === 'thread.message.delta' && event.data && event.data.delta && event.data.delta.content) {
-                    // Log the contents of the content array to see its structure
-                    console.log("Content array details:", event.data.delta.content);
-
-                    const textContent = event.data.delta.content.map(item => {
-                        // Access the nested text value
-                        console.log("Processing item:", item); // Log each item to understand its structure
-                        return item.text && item.text.value ? item.text.value : ""; // Safely access 'text.value'
-                    }).join(' ');
-
-                    console.log("Extracted text content:", textContent); // Log the final text content
-                    sendEventStreamData({ message: textContent });
-                } else {
-                    console.log("Event does not contain expected structure:", event);
+                    const textContent = event.data.delta.content.map(item => item.text && item.text.value ? item.text.value : "").join(' ');
+                    res.write(`data: ${JSON.stringify({ message: textContent })}\n\n`);
+                } else if (event.event === 'thread.run.completed') {
+                    console.log("Thread run completed, ending stream.");
+                    res.write(`data: ${JSON.stringify({ message: "Stream completed" })}\n\n`);
+                    break;
                 }
             }
         })
         .catch((error) => {
-            console.error("Error during event streaming:", error);
-            sendEventStreamData({ error: "Failed to stream events" });
+            console.error(`Error in stream for threadId ${threadId}: ${error.message}`);
+            res.write(`data: ${JSON.stringify({ error: "Failed to stream events", details: error.message })}\n\n`);
+        })
+        .finally(() => {
+            console.log("Closing stream.");
+            res.end();
         });
 
     req.on('close', () => {
-        console.log('Client closed connection');
+        console.log("Client disconnected, cancelling stream if active.");
+        if (stream && stream.cancel) {
+            stream.cancel();
+        }
         res.end();
     });
 });
+
+
+
+
 
 
 
@@ -218,6 +220,7 @@ app.get('/last', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+
+const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
