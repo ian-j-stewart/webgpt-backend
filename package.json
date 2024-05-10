@@ -5,6 +5,7 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
+    "prestart": "npm cache clean --force",
     "start": "node server.js"
   },
   "repository": {
