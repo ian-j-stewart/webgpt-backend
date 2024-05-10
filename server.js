@@ -1,11 +1,13 @@
 import axios from 'axios';
 import express from 'express';
 import cors from 'cors';
-
+import OpenAI from 'openai';
 const app = express();
 import dotenv from 'dotenv';
 dotenv.config();
-
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY // Ensure your API key is stored in environment variables
+});
 const key = process.env.OPENAI_API_KEY
 console.log(`API Key from .env: ${process.env.OPENAI_API_KEY}`);
 const allowedOrigins = [
@@ -33,6 +35,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+
 const openaiUrl = `https://api.openai.com/v2/assistants/${process.env.OPENAI_ASSISTANT_ID}/completions`; // Update with the correct v2 Assistant endpoint
 const apiKey = process.env.OPENAI_API_KEY;
 const assistantId = process.env.OPENAI_ASSISTANT_ID// Replace with your actual assistant ID
@@ -44,6 +47,7 @@ const config = {
     }
 };
 const host = process.env.REACT_APP_ENDPOINT; // Update with your backend host
+
 
 
 app.post('/createThread', async (req, res) => {
@@ -109,7 +113,7 @@ app.post('/chat', async (req, res) => {
 
 
         // Send a POST request to OpenAI to add the message to the thread
-        const response =  axios.post(`https://api.openai.com/v1/threads/${threadId}/messages`, data, {
+        const response =  await axios.post(`https://api.openai.com/v1/threads/${threadId}/messages`, data, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${key}`,
@@ -117,8 +121,8 @@ app.post('/chat', async (req, res) => {
             }}
         );
 
-        console.log("Message response from OpenAI:", response);
-        res.json({ success: true }); // Only send the response data received from OpenAI
+
+        res.json(response.data.id); // Only send the response data received from OpenAI
     } catch (error) {
         console.error('Error submitting message to OpenAI:', error);
         // Determine the status code to return
@@ -129,37 +133,55 @@ app.post('/chat', async (req, res) => {
 });
 
 
-app.post('/run', async (req, res) => {
-    console.log("in run")
-    const { threadId } = req.body;
-    console.log("run id", threadId)
-    try {
-        // Optional: Post a message to the thread if needed
+app.get('/stream', (req, res) => {
+    const threadId = req.query.threadId;
+    const assistantId = process.env.OPENAI_ASSISTANT_ID;
 
-        // Run the thread
-        const runResponse = await  axios.post(`https://api.openai.com/v1/threads/${threadId}/runs`, { "assistant_id": process.env.OPENAI_ASSISTANT_ID }, {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${key}`, // Using environment variable
-                'OpenAI-Beta': 'assistants=v2'
-            }});
-        console.log("Thread run response:", runResponse);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
 
+    // Function to send data to the client
+    const sendEventStreamData = (data) => {
+        res.write(`data: ${JSON.stringify(data)}\n\n`);
+    };
 
+    const stream = openai.beta.threads.runs.create(threadId, { assistant_id: assistantId, stream: true })
+        .then(async (stream) => {
+            for await (const event of stream) {
+                console.log("Received event:", event);
 
-        res.status(200).json({
-            message: "thread run successfully.",
-            // messageResponse: messageResponse.data,  // Uncomment if you are handling messages
-            runResponse: runResponse.data
+                if (event.event === 'thread.message.delta' && event.data && event.data.delta && event.data.delta.content) {
+                    // Log the contents of the content array to see its structure
+                    console.log("Content array details:", event.data.delta.content);
+
+                    const textContent = event.data.delta.content.map(item => {
+                        // Access the nested text value
+                        console.log("Processing item:", item); // Log each item to understand its structure
+                        return item.text && item.text.value ? item.text.value : ""; // Safely access 'text.value'
+                    }).join(' ');
+
+                    console.log("Extracted text content:", textContent); // Log the final text content
+                    sendEventStreamData({ message: textContent });
+                } else {
+                    console.log("Event does not contain expected structure:", event);
+                }
+            }
+        })
+        .catch((error) => {
+            console.error("Error during event streaming:", error);
+            sendEventStreamData({ error: "Failed to stream events" });
         });
-    } catch (error) {
-        console.error('Error during  thread run:', error);
-        res.status(500).json({
-            message: "Failed to submit message or run thread.",
-            error: error.message
-        });
-    }
+
+    req.on('close', () => {
+        console.log('Client closed connection');
+        res.end();
+    });
 });
+
+
+
+
 
 
 app.get('/last', async (req, res) => {
