@@ -9,6 +9,8 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY // Ensure your API key is stored in environment variables
 });
 const key = process.env.OPENAI_API_KEY
+
+console.log("assistantid", process.env.OPENAI_ASSISTANT_ID)
 console.log(`API Key from .env: ${process.env.OPENAI_API_KEY}`);
 const allowedOrigins = [
     "http://localhost:3000",
@@ -137,7 +139,7 @@ app.post('/chat', async (req, res) => {
 
 app.get('/stream', (req, res) => {
     const threadId = req.query.threadId;
-    //console.log(`Starting new stream for threadId: ${threadId}`);
+    console.log(`Starting new stream for threadId: ${threadId}`);
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -155,17 +157,15 @@ app.get('/stream', (req, res) => {
                 } else if (event.event === 'thread.run.completed') {
                     console.log("Thread run completed, ending stream.");
                     res.write(`data: ${JSON.stringify({ message: "Stream completed" })}\n\n`);
-                    break;
+                    break;  // Exit the loop on completion
                 }
             }
+            res.end();  // Ensure the response is closed after the loop
         })
         .catch((error) => {
             console.error(`Error in stream for threadId ${threadId}: ${error.message}`);
             res.write(`data: ${JSON.stringify({ error: "Failed to stream events", details: error.message })}\n\n`);
-        })
-        .finally(() => {
-            console.log("Closing stream.");
-            res.end();
+            res.end();  // Close the response on error
         });
 
     req.on('close', () => {
@@ -176,6 +176,7 @@ app.get('/stream', (req, res) => {
         res.end();
     });
 });
+
 
 
 
